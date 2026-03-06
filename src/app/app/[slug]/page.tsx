@@ -20,6 +20,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { FolderTree } from "@/components/folder-tree";
 import { RequestEditor } from "@/components/request-editor";
 import { EnvironmentManager } from "@/components/environment-manager";
@@ -40,6 +45,7 @@ import {
   X,
   Loader2,
   ChevronLeft,
+  Menu,
 } from "lucide-react";
 
 const METHOD_COLORS: Record<HttpMethod, string> = {
@@ -72,6 +78,7 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [resizing, setResizing] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const tabs = useRequestStore((s) => s.tabs);
   const activeTabIndex = useRequestStore((s) => s.activeTabIndex);
@@ -317,29 +324,119 @@ export default function WorkspacePage() {
     );
   }
 
+  // Sidebar content extracted for reuse in desktop and mobile sheet
+  const sidebarContent = (
+    <>
+      <div className="flex items-center gap-1 p-2 border-b border-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex-1 text-xs justify-start"
+          onClick={() => {
+            handleNewRequest();
+            setMobileSidebarOpen(false);
+          }}
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" />
+          New Request
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => {
+            handleNewFolder();
+            setMobileSidebarOpen(false);
+          }}
+        >
+          <FolderPlus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-1">
+          <FolderTree
+            folders={folders}
+            allFolders={allFoldersFlat}
+            onRenameRequest={handleRenameRequest}
+            onDeleteRequest={handleDeleteRequest}
+            onDuplicateRequest={handleDuplicateRequest}
+            onMoveRequest={handleMoveRequest}
+            onRenameFolder={handleRenameFolder}
+            onDeleteFolder={handleDeleteFolder}
+          />
+          {/* Root-level requests (not in any folder) */}
+          {rootRequests.map((req) => (
+            <div
+              key={req.id}
+              className="group flex items-center gap-1.5 py-1 px-2 rounded-sm hover:bg-muted/50 cursor-pointer"
+              onClick={() => {
+                openTab(req);
+                setMobileSidebarOpen(false);
+              }}
+            >
+              <span
+                className={`shrink-0 px-1.5 py-0 text-[9px] font-bold font-mono rounded ${
+                  req.method === "GET"
+                    ? "bg-green-600/20 text-green-400"
+                    : req.method === "POST"
+                      ? "bg-yellow-600/20 text-yellow-400"
+                      : req.method === "PUT"
+                        ? "bg-blue-600/20 text-blue-400"
+                        : req.method === "PATCH"
+                          ? "bg-orange-600/20 text-orange-400"
+                          : req.method === "DELETE"
+                            ? "bg-red-600/20 text-red-400"
+                            : "bg-purple-600/20 text-purple-400"
+                }`}
+              >
+                {req.method.substring(0, 3)}
+              </span>
+              <span className="text-xs text-foreground/80 truncate">
+                {req.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      </ScrollArea>
+    </>
+  );
+
   return (
     <div className="flex h-screen flex-col bg-background overflow-hidden">
       {/* Top bar */}
-      <header className="flex h-12 items-center justify-between border-b border-border bg-card px-3 shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="flex h-12 items-center justify-between border-b border-border bg-card px-2 md:px-3 shrink-0">
+        <div className="flex items-center gap-2 md:gap-3 min-w-0">
+          {/* Mobile hamburger menu */}
+          <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+            <SheetTrigger asChild>
+              <button className="md:hidden text-muted-foreground hover:text-foreground p-1">
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+              {sidebarContent}
+            </SheetContent>
+          </Sheet>
+
           <button
             onClick={() => router.push("/app")}
             className="text-muted-foreground hover:text-foreground"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <Zap className="h-4 w-4 text-[#FF6B35]" />
-          <span className="text-sm font-semibold">{workspace.name}</span>
+          <Zap className="h-4 w-4 text-[#FF6B35] hidden sm:block" />
+          <span className="text-sm font-semibold truncate">{workspace.name}</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2 shrink-0">
           {/* Environment selector */}
           <Select
             value={activeEnvironment?.id ?? ""}
             onValueChange={handleEnvironmentChange}
           >
-            <SelectTrigger className="w-[160px] h-8 text-xs bg-muted/50">
-              <SelectValue placeholder="No environment" />
+            <SelectTrigger className="w-[100px] md:w-[160px] h-8 text-xs bg-muted/50">
+              <SelectValue placeholder="No env" />
             </SelectTrigger>
             <SelectContent>
               {environments.map((env) => (
@@ -358,7 +455,7 @@ export default function WorkspacePage() {
             role={workspace.role}
           />
 
-          <Separator orientation="vertical" className="h-6" />
+          <Separator orientation="vertical" className="h-6 hidden sm:block" />
 
           {/* User menu */}
           <DropdownMenu>
@@ -383,79 +480,17 @@ export default function WorkspacePage() {
       </header>
 
       <div className="flex flex-1 min-h-0">
-        {/* Sidebar */}
+        {/* Sidebar - hidden on mobile, narrower on tablet */}
         <div
-          className="flex flex-col border-r border-border bg-card shrink-0"
+          className="hidden md:flex flex-col border-r border-border bg-card shrink-0"
           style={{ width: `${sidebarWidth}px` }}
         >
-          <div className="flex items-center gap-1 p-2 border-b border-border">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 text-xs justify-start"
-              onClick={handleNewRequest}
-            >
-              <Plus className="mr-1 h-3.5 w-3.5" />
-              New Request
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={handleNewFolder}
-            >
-              <FolderPlus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-
-          <ScrollArea className="flex-1">
-            <div className="p-1">
-              <FolderTree
-                folders={folders}
-                allFolders={allFoldersFlat}
-                onRenameRequest={handleRenameRequest}
-                onDeleteRequest={handleDeleteRequest}
-                onDuplicateRequest={handleDuplicateRequest}
-                onMoveRequest={handleMoveRequest}
-                onRenameFolder={handleRenameFolder}
-                onDeleteFolder={handleDeleteFolder}
-              />
-              {/* Root-level requests (not in any folder) */}
-              {rootRequests.map((req) => (
-                <div
-                  key={req.id}
-                  className="group flex items-center gap-1.5 py-1 px-2 rounded-sm hover:bg-muted/50 cursor-pointer"
-                  onClick={() => openTab(req)}
-                >
-                  <span
-                    className={`shrink-0 px-1.5 py-0 text-[9px] font-bold font-mono rounded ${
-                      req.method === "GET"
-                        ? "bg-green-600/20 text-green-400"
-                        : req.method === "POST"
-                          ? "bg-yellow-600/20 text-yellow-400"
-                          : req.method === "PUT"
-                            ? "bg-blue-600/20 text-blue-400"
-                            : req.method === "PATCH"
-                              ? "bg-orange-600/20 text-orange-400"
-                              : req.method === "DELETE"
-                                ? "bg-red-600/20 text-red-400"
-                                : "bg-purple-600/20 text-purple-400"
-                    }`}
-                  >
-                    {req.method.substring(0, 3)}
-                  </span>
-                  <span className="text-xs text-foreground/80 truncate">
-                    {req.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+          {sidebarContent}
         </div>
 
-        {/* Resize handle */}
+        {/* Resize handle - hidden on mobile and tablet */}
         <div
-          className={`w-1 cursor-col-resize hover:bg-[#FF6B35]/30 transition-colors shrink-0 ${
+          className={`hidden lg:block w-1 cursor-col-resize hover:bg-[#FF6B35]/30 transition-colors shrink-0 ${
             resizing ? "bg-[#FF6B35]/50" : ""
           }`}
           onMouseDown={handleMouseDown}
@@ -463,13 +498,13 @@ export default function WorkspacePage() {
 
         {/* Main area */}
         <div className="flex-1 flex flex-col min-w-0 min-h-0">
-          {/* Tabs */}
+          {/* Tabs - horizontally scrollable */}
           {tabs.length > 0 && (
-            <div className="flex items-center border-b border-border bg-card shrink-0 overflow-x-auto">
+            <div className="flex items-center border-b border-border bg-card shrink-0 overflow-x-auto scrollbar-none">
               {tabs.map((tab, i) => (
                 <button
                   key={tab.request.id}
-                  className={`group flex items-center gap-1.5 px-3 py-2 text-xs border-r border-border shrink-0 max-w-[200px] ${
+                  className={`group flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-2 text-xs border-r border-border shrink-0 max-w-[150px] md:max-w-[200px] ${
                     i === activeTabIndex
                       ? "bg-background text-foreground border-b-2 border-b-[#FF6B35]"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/30"

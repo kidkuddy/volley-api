@@ -89,7 +89,7 @@ export default function WorkspacesPage() {
     <div className="min-h-screen bg-background">
       {/* Top nav */}
       <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-6">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-[#FF6B35]" />
             <span className="text-lg font-bold tracking-tight">Volley</span>
@@ -115,17 +115,17 @@ export default function WorkspacesPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
+      <main className="mx-auto max-w-5xl px-4 md:px-6 py-6 md:py-8">
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Workspaces</h1>
+            <h1 className="text-xl md:text-2xl font-bold">Workspaces</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Select a workspace or create a new one
             </p>
           </div>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[#FF6B35] hover:bg-[#e55a2b] text-white">
+              <Button className="w-full sm:w-auto bg-[#FF6B35] hover:bg-[#e55a2b] text-white">
                 <Plus className="mr-1.5 h-4 w-4" />
                 Create Workspace
               </Button>
@@ -172,7 +172,7 @@ export default function WorkspacesPage() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {workspaces.map((ws) => (
               <Card
                 key={ws.id}

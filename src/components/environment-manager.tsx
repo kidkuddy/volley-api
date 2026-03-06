@@ -169,14 +169,14 @@ export function EnvironmentManager({ workspaceId, trigger }: EnvironmentManagerP
           </Button>
         )}
       </SheetTrigger>
-      <SheetContent className="w-[500px] sm:max-w-[500px] p-0 flex flex-col">
+      <SheetContent className="w-full sm:w-[500px] sm:max-w-[500px] p-0 flex flex-col">
         <SheetHeader className="p-4 border-b border-border">
           <SheetTitle>Environment Manager</SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0">
           {/* Environment list */}
-          <div className="w-[180px] border-r border-border flex flex-col">
+          <div className="w-full sm:w-[180px] border-b sm:border-b-0 sm:border-r border-border flex flex-col shrink-0 max-h-[200px] sm:max-h-none">
             <div className="p-2">
               <Button
                 variant="outline"

@@ -84,7 +84,7 @@ export default function Home() {
         <div className="relative z-10 mx-auto max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#FF6B35]/20 bg-[#FF6B35]/5 px-4 py-1.5 text-sm text-[#FF6B35]">
             <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#FF6B35]" />
-            Open Source &middot; Free Forever
+            Beta &middot; Open Source &middot; Free Forever
           </div>
 
           <h1 className="text-5xl font-bold leading-tight tracking-tight sm:text-7xl">

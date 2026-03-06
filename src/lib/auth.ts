@@ -38,7 +38,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!isValid) return null;
 
-        return { id: user.id, email: user.email, name: user.name, image: user.image };
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          isAdmin: user.isAdmin,
+          isApproved: user.isApproved,
+        };
       },
     }),
   ],
@@ -46,12 +53,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id!;
+        token.isAdmin = (user as Record<string, unknown>).isAdmin as boolean;
+        token.isApproved = (user as Record<string, unknown>).isApproved as boolean;
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.isAdmin = token.isAdmin as boolean;
+        session.user.isApproved = token.isApproved as boolean;
       }
       return session;
     },

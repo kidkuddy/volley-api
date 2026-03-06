@@ -80,7 +80,7 @@ export default function RegisterPage() {
           </div>
           <CardTitle className="text-xl">Create your account</CardTitle>
           <CardDescription>
-            Get started with Volley for free
+            Sign up for beta access. Accounts require admin approval.
           </CardDescription>
         </CardHeader>
 

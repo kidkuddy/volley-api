@@ -128,7 +128,7 @@ export function WorkspaceSettings({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-[95vw] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Workspace Settings</DialogTitle>
         </DialogHeader>
@@ -163,31 +163,33 @@ export function WorkspaceSettings({
             {/* Invite */}
             <div className="space-y-2">
               <Label className="text-sm">Invite Member</Label>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <Input
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="email@example.com"
                   className="bg-background flex-1"
                 />
-                <Select
-                  value={inviteRole}
-                  onValueChange={(v) => setInviteRole(v as WorkspaceRole)}
-                >
-                  <SelectTrigger className="w-[120px] bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CONSUMER">Consumer</SelectItem>
-                    <SelectItem value="MANAGER">Manager</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button
-                  onClick={handleInvite}
-                  className="bg-[#FF6B35] hover:bg-[#e55a2b] text-white"
-                >
-                  <UserPlus className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={inviteRole}
+                    onValueChange={(v) => setInviteRole(v as WorkspaceRole)}
+                  >
+                    <SelectTrigger className="w-full sm:w-[120px] bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CONSUMER">Consumer</SelectItem>
+                      <SelectItem value="MANAGER">Manager</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={handleInvite}
+                    className="bg-[#FF6B35] hover:bg-[#e55a2b] text-white shrink-0"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
 
@@ -199,55 +201,59 @@ export function WorkspaceSettings({
                 {members.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 p-2 rounded-md border border-border"
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 p-2 rounded-md border border-border"
                   >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={member.user.image ?? undefined} />
-                      <AvatarFallback className="text-xs bg-muted">
-                        {(member.user.name ?? member.user.email)[0]?.toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarImage src={member.user.image ?? undefined} />
+                        <AvatarFallback className="text-xs bg-muted">
+                          {(member.user.name ?? member.user.email)[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
 
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {member.user.name ?? member.user.email}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {member.user.email}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {member.user.name ?? member.user.email}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {member.user.email}
+                        </p>
+                      </div>
                     </div>
 
-                    <Select
-                      value={member.role}
-                      onValueChange={(v) => handleChangeRole(member.id, v as WorkspaceRole)}
-                    >
-                      <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CONSUMER">
-                          <div className="flex items-center gap-1.5">
-                            <User className="h-3 w-3" />
-                            Consumer
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="MANAGER">
-                          <div className="flex items-center gap-1.5">
-                            <Shield className="h-3 w-3" />
-                            Manager
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2 pl-11 sm:pl-0 shrink-0">
+                      <Select
+                        value={member.role}
+                        onValueChange={(v) => handleChangeRole(member.id, v as WorkspaceRole)}
+                      >
+                        <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="CONSUMER">
+                            <div className="flex items-center gap-1.5">
+                              <User className="h-3 w-3" />
+                              Consumer
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="MANAGER">
+                            <div className="flex items-center gap-1.5">
+                              <Shield className="h-3 w-3" />
+                              Manager
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleRemoveMember(member.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                        onClick={() => handleRemoveMember(member.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

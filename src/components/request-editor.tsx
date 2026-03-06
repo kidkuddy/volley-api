@@ -134,41 +134,43 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
   return (
     <div className="flex flex-col h-full">
       {/* URL bar */}
-      <div className="flex items-center gap-2 p-3 border-b border-border">
-        {!isWebSocket ? (
-          <Select
-            value={request.method}
-            onValueChange={(v) => setMethod(v as HttpMethod)}
-          >
-            <SelectTrigger className="w-[120px] h-9 font-mono text-sm font-semibold bg-muted/50">
-              <SelectValue>
-                <span className={METHOD_COLORS[request.method]}>{request.method}</span>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {HTTP_METHODS.map((m) => (
-                <SelectItem key={m} value={m}>
-                  <span className={`font-mono font-semibold ${METHOD_COLORS[m]}`}>{m}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <Badge className="h-9 px-3 bg-purple-600/20 text-purple-400 border-purple-600/30 font-mono text-sm">
-            WS
-          </Badge>
-        )}
+      <div className="flex flex-col md:flex-row md:items-center gap-2 p-3 border-b border-border">
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {!isWebSocket ? (
+            <Select
+              value={request.method}
+              onValueChange={(v) => setMethod(v as HttpMethod)}
+            >
+              <SelectTrigger className="w-[100px] md:w-[120px] h-9 font-mono text-sm font-semibold bg-muted/50 shrink-0">
+                <SelectValue>
+                  <span className={METHOD_COLORS[request.method]}>{request.method}</span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {HTTP_METHODS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    <span className={`font-mono font-semibold ${METHOD_COLORS[m]}`}>{m}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Badge className="h-9 px-3 bg-purple-600/20 text-purple-400 border-purple-600/30 font-mono text-sm shrink-0">
+              WS
+            </Badge>
+          )}
 
-        <Input
-          value={request.url}
-          onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter URL or paste text"
-          className="flex-1 h-9 font-mono text-sm bg-background"
-        />
+          <Input
+            value={request.url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="Enter URL or paste text"
+            className="flex-1 h-9 font-mono text-sm bg-background"
+          />
+        </div>
 
         {!isWebSocket ? (
           <Button
-            className="h-9 px-5 bg-[#FF6B35] hover:bg-[#e55a2b] text-white font-medium"
+            className="h-9 w-full md:w-auto px-5 bg-[#FF6B35] hover:bg-[#e55a2b] text-white font-medium shrink-0"
             onClick={handleSend}
             disabled={loading}
           >
@@ -181,7 +183,7 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
           </Button>
         ) : (
           <Button
-            className={`h-9 px-5 font-medium ${
+            className={`h-9 w-full md:w-auto px-5 font-medium shrink-0 ${
               tab.wsConnected
                 ? "bg-red-600 hover:bg-red-700 text-white"
                 : "bg-[#FF6B35] hover:bg-[#e55a2b] text-white"
@@ -227,7 +229,7 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
 
       {/* Tabs */}
       <Tabs defaultValue="params" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="h-9 bg-transparent border-b border-border rounded-none w-full justify-start px-3 shrink-0">
+        <TabsList className="h-9 bg-transparent border-b border-border rounded-none w-full justify-start px-3 shrink-0 overflow-x-auto scrollbar-none">
           <TabsTrigger value="params" className="text-xs data-[state=active]:bg-muted rounded-sm">
             Params
           </TabsTrigger>
@@ -335,7 +337,7 @@ function BodyEditor({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {BODY_TYPES.map((bt) => (
           <button
             key={bt.value}

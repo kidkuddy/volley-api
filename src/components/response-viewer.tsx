@@ -36,7 +36,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
   return (
     <div className="flex flex-col border-t border-border">
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-muted/30">
+      <div className="flex flex-wrap items-center gap-2 md:gap-3 px-3 md:px-4 py-2 border-b border-border bg-muted/30">
         <Badge className={`font-mono text-xs ${statusColor(response.status)}`}>
           {response.status} {response.statusText}
         </Badge>
@@ -72,7 +72,8 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
 
         <TabsContent value="headers" className="mt-0">
           <ScrollArea className="h-[300px]">
-            <table className="w-full text-xs">
+            {/* Table layout for md+ screens */}
+            <table className="hidden md:table w-full text-xs">
               <thead>
                 <tr className="border-b border-border">
                   <th className="px-4 py-2 text-left font-medium text-muted-foreground">Header</th>
@@ -88,6 +89,15 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
                 ))}
               </tbody>
             </table>
+            {/* Stacked card layout for mobile */}
+            <div className="md:hidden space-y-2 p-3">
+              {Object.entries(response.headers).map(([key, value]) => (
+                <div key={key} className="rounded-md border border-border/50 p-2">
+                  <div className="text-xs font-mono font-medium text-[#FF6B35] mb-0.5">{key}</div>
+                  <div className="text-xs font-mono text-foreground break-all">{value}</div>
+                </div>
+              ))}
+            </div>
           </ScrollArea>
         </TabsContent>
       </Tabs>
