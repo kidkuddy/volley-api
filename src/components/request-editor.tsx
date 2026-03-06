@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,25 +19,24 @@ import { WebSocketPanel } from "@/components/websocket-panel";
 import { useRequestStore } from "@/stores/request-store";
 import type { HttpMethod, BodyType, SavedPayload, SavedAuth } from "@/types";
 import { Send, Loader2, Plug, Unplug, Save } from "lucide-react";
-import { v4 as uuid } from "uuid";
 
 const HTTP_METHODS: HttpMethod[] = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"];
 
-const METHOD_COLORS: Record<HttpMethod, string> = {
-  GET: "text-green-400",
-  POST: "text-yellow-400",
-  PUT: "text-blue-400",
-  PATCH: "text-orange-400",
-  DELETE: "text-red-400",
-  HEAD: "text-purple-400",
-  OPTIONS: "text-teal-400",
+const METHOD_CLASSES: Record<HttpMethod, string> = {
+  GET: "method-get",
+  POST: "method-post",
+  PUT: "method-put",
+  PATCH: "method-patch",
+  DELETE: "method-delete",
+  HEAD: "method-head",
+  OPTIONS: "method-options",
 };
 
 const BODY_TYPES: { value: BodyType; label: string }[] = [
   { value: "none", label: "None" },
   { value: "json", label: "JSON" },
   { value: "form-data", label: "Form Data" },
-  { value: "x-www-form-urlencoded", label: "x-www-form-urlencoded" },
+  { value: "x-www-form-urlencoded", label: "URL Encoded" },
   { value: "raw", label: "Raw" },
 ];
 
@@ -46,8 +45,6 @@ interface RequestEditorProps {
 }
 
 export function RequestEditor({ workspaceId }: RequestEditorProps) {
-  const [wsConnecting, setWsConnecting] = useState(false);
-
   const tabs = useRequestStore((s) => s.tabs);
   const activeTabIndex = useRequestStore((s) => s.activeTabIndex);
   const setMethod = useRequestStore((s) => s.setMethod);
@@ -65,15 +62,17 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
   const setLoading = useRequestStore((s) => s.setLoading);
   const resolveUrl = useRequestStore((s) => s.resolveUrl);
   const applyPayload = useRequestStore((s) => s.applyPayload);
-  const setActivePayload = useRequestStore((s) => s.setActivePayload);
   const setActiveAuth = useRequestStore((s) => s.setActiveAuth);
   const savedAuths = useRequestStore((s) => s.savedAuths);
 
   const tab = activeTabIndex >= 0 ? tabs[activeTabIndex] : null;
   if (!tab) {
     return (
-      <div className="flex-1 flex items-center justify-center text-muted-foreground">
-        <p>Open a request or create a new one to get started</p>
+      <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-2 py-20">
+        <div className="h-12 w-12 rounded-xl bg-surface-2 border border-border/30 flex items-center justify-center">
+          <Send className="h-5 w-5 text-muted-foreground/50" />
+        </div>
+        <p className="text-sm">Open a request or create a new one</p>
       </div>
     );
   }
@@ -134,28 +133,28 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
   return (
     <div className="flex flex-col h-full">
       {/* URL bar */}
-      <div className="flex flex-col md:flex-row md:items-center gap-2 p-3 border-b border-border">
-        <div className="flex items-center gap-2 w-full md:w-auto">
+      <div className="flex flex-col md:flex-row md:items-center gap-2 p-3 border-b border-border/50">
+        <div className="flex items-center gap-1.5 w-full">
           {!isWebSocket ? (
             <Select
               value={request.method}
               onValueChange={(v) => setMethod(v as HttpMethod)}
             >
-              <SelectTrigger className="w-[100px] md:w-[120px] h-9 font-mono text-sm font-semibold bg-muted/50 shrink-0">
+              <SelectTrigger className="w-[90px] md:w-[100px] h-9 font-mono text-xs font-bold bg-surface-2 border-border/30 shrink-0">
                 <SelectValue>
-                  <span className={METHOD_COLORS[request.method]}>{request.method}</span>
+                  <span className={METHOD_CLASSES[request.method]}>{request.method}</span>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {HTTP_METHODS.map((m) => (
                   <SelectItem key={m} value={m}>
-                    <span className={`font-mono font-semibold ${METHOD_COLORS[m]}`}>{m}</span>
+                    <span className={`font-mono font-bold text-xs ${METHOD_CLASSES[m]}`}>{m}</span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           ) : (
-            <Badge className="h-9 px-3 bg-purple-600/20 text-purple-400 border-purple-600/30 font-mono text-sm shrink-0">
+            <Badge className="h-9 px-3 bg-purple-500/10 text-purple-400 border-purple-500/20 font-mono text-xs shrink-0">
               WS
             </Badge>
           )}
@@ -163,63 +162,57 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
           <Input
             value={request.url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter URL or paste text"
-            className="flex-1 h-9 font-mono text-sm bg-background"
-          />
-        </div>
-
-        {!isWebSocket ? (
-          <Button
-            className="h-9 w-full md:w-auto px-5 bg-[#FF6B35] hover:bg-[#e55a2b] text-white font-medium shrink-0"
-            onClick={handleSend}
-            disabled={loading}
-          >
-            {loading ? (
-              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="mr-1.5 h-4 w-4" />
-            )}
-            Send
-          </Button>
-        ) : (
-          <Button
-            className={`h-9 w-full md:w-auto px-5 font-medium shrink-0 ${
-              tab.wsConnected
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-[#FF6B35] hover:bg-[#e55a2b] text-white"
-            }`}
-            onClick={() => {
-              // ws connect/disconnect handled in WebSocketPanel
+            placeholder="https://api.example.com/endpoint"
+            className="flex-1 h-9 font-mono text-xs bg-surface-2 border-border/30 focus:border-volley/50"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isWebSocket) handleSend();
             }}
-          >
-            {tab.wsConnected ? (
-              <>
-                <Unplug className="mr-1.5 h-4 w-4" />
-                Disconnect
-              </>
-            ) : (
-              <>
-                <Plug className="mr-1.5 h-4 w-4" />
-                Connect
-              </>
-            )}
-          </Button>
-        )}
+          />
+
+          {!isWebSocket ? (
+            <Button
+              className="h-9 px-4 bg-volley hover:bg-volley-hover text-white font-medium text-xs shrink-0"
+              onClick={handleSend}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Send className="h-3.5 w-3.5" />
+              )}
+              <span className="ml-1.5 hidden sm:inline">Send</span>
+            </Button>
+          ) : (
+            <Button
+              className={`h-9 px-4 font-medium text-xs shrink-0 ${
+                tab.wsConnected
+                  ? "bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20"
+                  : "bg-volley hover:bg-volley-hover text-white"
+              }`}
+            >
+              {tab.wsConnected ? (
+                <><Unplug className="h-3.5 w-3.5 mr-1.5" />Disconnect</>
+              ) : (
+                <><Plug className="h-3.5 w-3.5 mr-1.5" />Connect</>
+              )}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Request type toggle */}
-      <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-muted/20">
+      {/* Protocol toggle */}
+      <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border/30 bg-surface-1/30">
         <button
-          className={`text-xs px-2 py-0.5 rounded ${
-            !isWebSocket ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+          className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors ${
+            !isWebSocket ? "bg-surface-3 text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
           onClick={() => setRequestType("HTTP")}
         >
           HTTP
         </button>
         <button
-          className={`text-xs px-2 py-0.5 rounded ${
-            isWebSocket ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"
+          className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-colors ${
+            isWebSocket ? "bg-surface-3 text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
           onClick={() => setRequestType("WEBSOCKET")}
         >
@@ -227,24 +220,18 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
         </button>
       </div>
 
-      {/* Tabs */}
+      {/* Request config tabs */}
       <Tabs defaultValue="params" className="flex-1 flex flex-col min-h-0">
-        <TabsList className="h-9 bg-transparent border-b border-border rounded-none w-full justify-start px-3 shrink-0 overflow-x-auto scrollbar-none">
-          <TabsTrigger value="params" className="text-xs data-[state=active]:bg-muted rounded-sm">
-            Params
-          </TabsTrigger>
-          <TabsTrigger value="headers" className="text-xs data-[state=active]:bg-muted rounded-sm">
-            Headers
-          </TabsTrigger>
-          <TabsTrigger value="body" className="text-xs data-[state=active]:bg-muted rounded-sm">
-            Body
-          </TabsTrigger>
-          <TabsTrigger value="auth" className="text-xs data-[state=active]:bg-muted rounded-sm">
-            Auth
-          </TabsTrigger>
-          <TabsTrigger value="payloads" className="text-xs data-[state=active]:bg-muted rounded-sm">
-            Payloads
-          </TabsTrigger>
+        <TabsList className="h-9 bg-transparent border-b border-border/30 rounded-none w-full justify-start px-3 shrink-0 overflow-x-auto scrollbar-none gap-0">
+          {["params", "headers", "body", "auth", "payloads"].map((tab) => (
+            <TabsTrigger
+              key={tab}
+              value={tab}
+              className="text-[11px] font-medium data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:border-b-2 data-[state=active]:border-volley rounded-none px-3 capitalize"
+            >
+              {tab}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <div className="flex-1 overflow-auto">
@@ -312,7 +299,7 @@ export function RequestEditor({ workspaceId }: RequestEditorProps) {
   );
 }
 
-/* ---------- Body Editor sub-component ---------- */
+/* ---------- Body Editor ---------- */
 
 function BodyEditor({
   bodyType,
@@ -337,15 +324,15 @@ function BodyEditor({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1">
         {BODY_TYPES.map((bt) => (
           <button
             key={bt.value}
             onClick={() => onBodyTypeChange(bt.value)}
-            className={`px-3 py-1 text-xs rounded-md transition-colors ${
+            className={`px-2.5 py-1 text-[11px] rounded-md font-medium transition-colors ${
               selectedType === bt.value
-                ? "bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/30"
-                : "text-muted-foreground hover:text-foreground border border-transparent"
+                ? "bg-volley/10 text-volley border border-volley/20"
+                : "text-muted-foreground hover:text-foreground hover:bg-surface-3 border border-transparent"
             }`}
           >
             {bt.label}
@@ -354,7 +341,7 @@ function BodyEditor({
       </div>
 
       {selectedType === "none" && (
-        <p className="text-sm text-muted-foreground py-4">This request does not have a body.</p>
+        <p className="text-xs text-muted-foreground py-6 text-center">No body for this request.</p>
       )}
 
       {(selectedType === "json" || selectedType === "raw") && (
@@ -362,20 +349,11 @@ function BodyEditor({
           value={body ?? ""}
           onChange={(e) => onBodyChange(e.target.value)}
           placeholder={selectedType === "json" ? '{\n  "key": "value"\n}' : "Enter raw body"}
-          className="min-h-[200px] font-mono text-sm bg-background resize-y"
+          className="min-h-[200px] font-mono text-xs bg-surface-2 border-border/30 resize-y"
         />
       )}
 
-      {selectedType === "form-data" && (
-        <KeyValueEditor
-          items={headers}
-          onChange={onHeaderChange}
-          onAdd={onHeaderAdd}
-          onRemove={onHeaderRemove}
-        />
-      )}
-
-      {selectedType === "x-www-form-urlencoded" && (
+      {(selectedType === "form-data" || selectedType === "x-www-form-urlencoded") && (
         <KeyValueEditor
           items={headers}
           onChange={onHeaderChange}
@@ -387,7 +365,7 @@ function BodyEditor({
   );
 }
 
-/* ---------- Auth Editor sub-component ---------- */
+/* ---------- Auth Editor ---------- */
 
 function AuthEditor({
   savedAuths,
@@ -400,8 +378,8 @@ function AuthEditor({
 }) {
   if (savedAuths.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground py-4">
-        No saved auth profiles. Create auth profiles in workspace settings.
+      <p className="text-xs text-muted-foreground py-6 text-center">
+        No saved auth profiles. Create profiles in workspace settings.
       </p>
     );
   }
@@ -409,7 +387,7 @@ function AuthEditor({
   return (
     <div className="space-y-3">
       <Select value={activeAuthId ?? ""} onValueChange={(v) => onSetAuth(v || null)}>
-        <SelectTrigger className="w-full h-9 text-sm bg-background">
+        <SelectTrigger className="w-full h-8 text-xs bg-surface-2 border-border/30">
           <SelectValue placeholder="Select auth profile" />
         </SelectTrigger>
         <SelectContent>
@@ -426,13 +404,13 @@ function AuthEditor({
         const auth = savedAuths.find((a) => a.id === activeAuthId);
         if (!auth) return null;
         return (
-          <div className="space-y-2 p-3 rounded-md bg-muted/30 border border-border">
+          <div className="space-y-2 p-3 rounded-lg bg-surface-2/50 border border-border/30">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">{auth.authType}</Badge>
-              <span className="text-sm font-medium">{auth.name}</span>
+              <Badge variant="outline" className="text-[10px] border-border/30">{auth.authType}</Badge>
+              <span className="text-xs font-medium">{auth.name}</span>
             </div>
             {Object.entries(auth.credentials).map(([key, value]) => (
-              <div key={key} className="text-xs font-mono">
+              <div key={key} className="text-[11px] font-mono">
                 <span className="text-muted-foreground">{key}: </span>
                 <span className="text-foreground">{value.substring(0, 20)}{value.length > 20 ? "..." : ""}</span>
               </div>
@@ -441,16 +419,16 @@ function AuthEditor({
         );
       })()}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {savedAuths.map((auth) => (
           <Button
             key={auth.id}
             variant={activeAuthId === auth.id ? "default" : "outline"}
             size="sm"
-            className={`text-xs ${activeAuthId === auth.id ? "bg-[#FF6B35] hover:bg-[#e55a2b] text-white" : ""}`}
+            className={`text-[11px] h-7 ${activeAuthId === auth.id ? "bg-volley hover:bg-volley-hover text-white" : "border-border/30"}`}
             onClick={() => onSetAuth(auth.id)}
           >
-            Run as {auth.name}
+            {auth.name}
           </Button>
         ))}
       </div>
@@ -458,7 +436,7 @@ function AuthEditor({
   );
 }
 
-/* ---------- Payloads Editor sub-component ---------- */
+/* ---------- Payloads Editor ---------- */
 
 function PayloadsEditor({
   payloads,
@@ -507,45 +485,45 @@ function PayloadsEditor({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-foreground">Saved Payloads</span>
+        <span className="text-xs font-medium text-muted-foreground">Saved Payloads</span>
         <Button
           variant="outline"
           size="sm"
-          className="text-xs"
+          className="text-[11px] h-7 border-border/30"
           onClick={saveAsPayload}
           disabled={saving}
         >
           <Save className="mr-1 h-3 w-3" />
-          Save Current as Payload
+          Save Current
         </Button>
       </div>
 
       {payloads.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-4">No saved payloads yet.</p>
+        <p className="text-xs text-muted-foreground py-6 text-center">No saved payloads yet.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {payloads.map((payload) => (
             <button
               key={payload.id}
               onClick={() => onApply(payload)}
-              className={`w-full text-left p-3 rounded-md border transition-colors ${
+              className={`w-full text-left p-3 rounded-lg border transition-colors ${
                 activePayloadId === payload.id
-                  ? "border-[#FF6B35]/50 bg-[#FF6B35]/5"
-                  : "border-border hover:border-border/80 bg-muted/20"
+                  ? "border-volley/30 bg-volley/5"
+                  : "border-border/30 hover:border-border/60 bg-surface-2/30"
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{payload.name}</span>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-[10px]">{payload.bodyType}</Badge>
+                <span className="text-xs font-medium">{payload.name}</span>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="outline" className="text-[9px] border-border/30">{payload.bodyType}</Badge>
                   {payload.isShared && (
-                    <Badge variant="secondary" className="text-[10px]">Shared</Badge>
+                    <Badge variant="secondary" className="text-[9px]">Shared</Badge>
                   )}
                 </div>
               </div>
               {payload.body && (
-                <p className="mt-1 text-xs font-mono text-muted-foreground truncate">
-                  {payload.body.substring(0, 100)}
+                <p className="mt-1 text-[11px] font-mono text-muted-foreground truncate">
+                  {payload.body.substring(0, 80)}
                 </p>
               )}
             </button>

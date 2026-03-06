@@ -24,6 +24,7 @@ model User {
   workspaceMembers WorkspaceMember[]
   savedPayloads    SavedPayload[]
   savedAuths       SavedAuth[]
+  proxyTokens      ProxyToken[]
 }
 
 model Account {
@@ -71,11 +72,12 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members      WorkspaceMember[]
-  folders      Folder[]
-  requests     Request[]
-  environments Environment[]
-  savedAuths   SavedAuth[]
+  members        WorkspaceMember[]
+  folders        Folder[]
+  requests       Request[]
+  environments   Environment[]
+  savedAuths     SavedAuth[]
+  openApiImports OpenApiImport[]
 }
 
 enum WorkspaceRole {
@@ -193,4 +195,45 @@ model SavedAuth {
   workspace   Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   environment Environment? @relation(fields: [environmentId], references: [id], onDelete: SetNull)
+}
+
+model ProxyToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  name      String
+  userId    String
+  isActive  Boolean  @default(true)
+  lastUsed  DateTime?
+  createdAt DateTime @default(now())
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests ProxyRequest[]
+}
+
+model ProxyRequest {
+  id           String   @id @default(cuid())
+  tokenId      String
+  method       String
+  url          String
+  headers      Json     @default("{}")
+  queryParams  Json     @default("{}")
+  bodyType     String?
+  body         String?
+  status       String   @default("pending")
+  response     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  token ProxyToken @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+}
+
+model OpenApiImport {
+  id          String   @id @default(cuid())
+  workspaceId String
+  title       String
+  version     String?
+  specHash    String
+  createdAt   DateTime @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

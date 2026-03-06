@@ -45,75 +45,48 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --color-volley: #FF6B35;
+  --color-volley-hover: #e55a2b;
+  --color-volley-muted: #FF6B3520;
+  --color-surface-0: #0c0c12;
+  --color-surface-1: #12121a;
+  --color-surface-2: #1a1a24;
+  --color-surface-3: #22222e;
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --radius: 0.5rem;
+  --background: #0c0c12;
+  --foreground: #e8e8ed;
+  --card: #12121a;
+  --card-foreground: #e8e8ed;
+  --popover: #1a1a24;
+  --popover-foreground: #e8e8ed;
+  --primary: #FF6B35;
+  --primary-foreground: #ffffff;
+  --secondary: #1a1a24;
+  --secondary-foreground: #e8e8ed;
+  --muted: #1a1a24;
+  --muted-foreground: #6b6b80;
+  --accent: #22222e;
+  --accent-foreground: #e8e8ed;
+  --destructive: #ef4444;
+  --border: #ffffff0d;
+  --input: #ffffff12;
+  --ring: #FF6B3580;
+  --chart-1: #FF6B35;
+  --chart-2: #22c55e;
+  --chart-3: #3b82f6;
+  --chart-4: #a855f7;
+  --chart-5: #eab308;
+  --sidebar: #12121a;
+  --sidebar-foreground: #e8e8ed;
+  --sidebar-primary: #FF6B35;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1a24;
+  --sidebar-accent-foreground: #e8e8ed;
+  --sidebar-border: #ffffff0d;
+  --sidebar-ring: #FF6B3580;
 }
 
 @layer base {
@@ -124,3 +97,42 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom scrollbar for the app */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #ffffff15;
+  border-radius: 3px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #ffffff25;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Method pill colors */
+.method-get { color: #22c55e; background: #22c55e15; }
+.method-post { color: #eab308; background: #eab30815; }
+.method-put { color: #3b82f6; background: #3b82f615; }
+.method-patch { color: #f97316; background: #f9731615; }
+.method-delete { color: #ef4444; background: #ef444415; }
+.method-head { color: #a855f7; background: #a855f715; }
+.method-options { color: #06b6d4; background: #06b6d415; }
+
+/* Status badge colors */
+.status-2xx { color: #22c55e; background: #22c55e15; border-color: #22c55e30; }
+.status-3xx { color: #eab308; background: #eab30815; border-color: #eab30830; }
+.status-4xx { color: #f97316; background: #f9731615; border-color: #f9731630; }
+.status-5xx { color: #ef4444; background: #ef444415; border-color: #ef444430; }

@@ -1,0 +1,13 @@
+{
+  "name": "volley-proxy",
+  "version": "0.1.0",
+  "description": "Volley local proxy CLI — forward requests from Volley to your localhost",
+  "bin": {
+    "volley-proxy": "./index.js"
+  },
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

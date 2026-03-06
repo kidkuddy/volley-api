@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import {
   Select,
   SelectContent,
@@ -17,8 +16,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sheet,
@@ -29,6 +35,7 @@ import { FolderTree } from "@/components/folder-tree";
 import { RequestEditor } from "@/components/request-editor";
 import { EnvironmentManager } from "@/components/environment-manager";
 import { WorkspaceSettings } from "@/components/workspace-settings";
+import { OpenApiImporter } from "@/components/openapi-importer";
 import { useRequestStore } from "@/stores/request-store";
 import type {
   Folder,
@@ -45,17 +52,20 @@ import {
   X,
   Loader2,
   ChevronLeft,
-  Menu,
+  PanelLeft,
+  FileUp,
+  Globe,
+  Settings,
 } from "lucide-react";
 
 const METHOD_COLORS: Record<HttpMethod, string> = {
-  GET: "text-green-400",
-  POST: "text-yellow-400",
-  PUT: "text-blue-400",
-  PATCH: "text-orange-400",
-  DELETE: "text-red-400",
-  HEAD: "text-purple-400",
-  OPTIONS: "text-teal-400",
+  GET: "method-get",
+  POST: "method-post",
+  PUT: "method-put",
+  PATCH: "method-patch",
+  DELETE: "method-delete",
+  HEAD: "method-head",
+  OPTIONS: "method-options",
 };
 
 interface WorkspaceData {
@@ -79,6 +89,7 @@ export default function WorkspacePage() {
   const [sidebarWidth, setSidebarWidth] = useState(260);
   const [resizing, setResizing] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const tabs = useRequestStore((s) => s.tabs);
   const activeTabIndex = useRequestStore((s) => s.activeTabIndex);
@@ -91,11 +102,9 @@ export default function WorkspacePage() {
   const environments = useRequestStore((s) => s.environments);
   const activeEnvironment = useRequestStore((s) => s.activeEnvironment);
 
-  // Fetch workspace data
   useEffect(() => {
     async function load() {
       try {
-        // First get workspace by slug
         const wsRes = await fetch("/api/workspaces");
         if (!wsRes.ok) return;
         const workspaces = await wsRes.json();
@@ -105,7 +114,6 @@ export default function WorkspacePage() {
           return;
         }
 
-        // Get full workspace details
         const detailRes = await fetch(`/api/workspaces/${ws.id}`);
         if (!detailRes.ok) return;
         const detail = await detailRes.json();
@@ -118,14 +126,12 @@ export default function WorkspacePage() {
           environments: detail.environments ?? [],
         });
 
-        // Set environments in store
         if (detail.environments) {
           setEnvironments(detail.environments);
           const active = detail.environments.find((e: Environment) => e.isActive);
           if (active) setActiveEnvironment(active);
         }
 
-        // Fetch folders and requests
         await fetchFoldersAndRequests(ws.id);
       } catch {
         // silently handle
@@ -149,7 +155,6 @@ export default function WorkspacePage() {
     }
   }
 
-  // Sidebar resize
   const handleMouseDown = useCallback(() => {
     setResizing(true);
   }, []);
@@ -174,7 +179,6 @@ export default function WorkspacePage() {
     };
   }, [resizing]);
 
-  // CRUD operations
   async function handleNewRequest() {
     if (!workspace) return;
     try {
@@ -294,7 +298,6 @@ export default function WorkspacePage() {
     setActiveEnvironment(env ?? null);
   }
 
-  // Flatten all folders for the move-to menu
   function flattenFolders(flds: Folder[]): Folder[] {
     const result: Folder[] = [];
     for (const f of flds) {
@@ -311,7 +314,7 @@ export default function WorkspacePage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -324,37 +327,47 @@ export default function WorkspacePage() {
     );
   }
 
-  // Sidebar content extracted for reuse in desktop and mobile sheet
   const sidebarContent = (
     <>
-      <div className="flex items-center gap-1 p-2 border-b border-border">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="flex-1 text-xs justify-start"
-          onClick={() => {
-            handleNewRequest();
-            setMobileSidebarOpen(false);
-          }}
-        >
-          <Plus className="mr-1 h-3.5 w-3.5" />
-          New Request
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => {
-            handleNewFolder();
-            setMobileSidebarOpen(false);
-          }}
-        >
-          <FolderPlus className="h-3.5 w-3.5" />
-        </Button>
+      {/* Sidebar header */}
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Requests</span>
+        <div className="flex items-center gap-0.5">
+          <TooltipProvider delayDuration={300}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    handleNewRequest();
+                    setMobileSidebarOpen(false);
+                  }}
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-3 transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">New Request</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => {
+                    handleNewFolder();
+                    setMobileSidebarOpen(false);
+                  }}
+                  className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-3 transition-colors"
+                >
+                  <FolderPlus className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">New Folder</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       <ScrollArea className="flex-1">
-        <div className="p-1">
+        <div className="py-1 px-1">
           <FolderTree
             folders={folders}
             allFolders={allFoldersFlat}
@@ -365,179 +378,219 @@ export default function WorkspacePage() {
             onRenameFolder={handleRenameFolder}
             onDeleteFolder={handleDeleteFolder}
           />
-          {/* Root-level requests (not in any folder) */}
           {rootRequests.map((req) => (
             <div
               key={req.id}
-              className="group flex items-center gap-1.5 py-1 px-2 rounded-sm hover:bg-muted/50 cursor-pointer"
+              className="group flex items-center gap-2 py-1.5 px-2.5 rounded-md hover:bg-surface-3/50 cursor-pointer transition-colors"
               onClick={() => {
                 openTab(req);
                 setMobileSidebarOpen(false);
               }}
             >
-              <span
-                className={`shrink-0 px-1.5 py-0 text-[9px] font-bold font-mono rounded ${
-                  req.method === "GET"
-                    ? "bg-green-600/20 text-green-400"
-                    : req.method === "POST"
-                      ? "bg-yellow-600/20 text-yellow-400"
-                      : req.method === "PUT"
-                        ? "bg-blue-600/20 text-blue-400"
-                        : req.method === "PATCH"
-                          ? "bg-orange-600/20 text-orange-400"
-                          : req.method === "DELETE"
-                            ? "bg-red-600/20 text-red-400"
-                            : "bg-purple-600/20 text-purple-400"
-                }`}
-              >
+              <span className={`shrink-0 px-1.5 py-px text-[9px] font-bold font-mono rounded ${METHOD_COLORS[req.method]}`}>
                 {req.method.substring(0, 3)}
               </span>
-              <span className="text-xs text-foreground/80 truncate">
+              <span className="text-xs text-foreground/70 truncate group-hover:text-foreground transition-colors">
                 {req.name}
               </span>
             </div>
           ))}
         </div>
       </ScrollArea>
+
+      {/* Sidebar footer */}
+      <div className="border-t border-border/50 p-2 space-y-1">
+        {workspace && (
+          <OpenApiImporter
+            workspaceId={workspace.id}
+            onImport={() => fetchFoldersAndRequests(workspace.id)}
+            trigger={
+              <button className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-surface-3 transition-colors">
+                <FileUp className="h-3.5 w-3.5" />
+                Import OpenAPI
+              </button>
+            }
+          />
+        )}
+      </div>
     </>
   );
 
   return (
-    <div className="flex h-screen flex-col bg-background overflow-hidden">
-      {/* Top bar */}
-      <header className="flex h-12 items-center justify-between border-b border-border bg-card px-2 md:px-3 shrink-0">
-        <div className="flex items-center gap-2 md:gap-3 min-w-0">
-          {/* Mobile hamburger menu */}
-          <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
-            <SheetTrigger asChild>
-              <button className="md:hidden text-muted-foreground hover:text-foreground p-1">
-                <Menu className="h-5 w-5" />
-              </button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
-              {sidebarContent}
-            </SheetContent>
-          </Sheet>
-
-          <button
-            onClick={() => router.push("/app")}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <Zap className="h-4 w-4 text-[#FF6B35] hidden sm:block" />
-          <span className="text-sm font-semibold truncate">{workspace.name}</span>
-        </div>
-
-        <div className="flex items-center gap-1 md:gap-2 shrink-0">
-          {/* Environment selector */}
-          <Select
-            value={activeEnvironment?.id ?? ""}
-            onValueChange={handleEnvironmentChange}
-          >
-            <SelectTrigger className="w-[100px] md:w-[160px] h-8 text-xs bg-muted/50">
-              <SelectValue placeholder="No env" />
-            </SelectTrigger>
-            <SelectContent>
-              {environments.map((env) => (
-                <SelectItem key={env.id} value={env.id} className="text-xs">
-                  {env.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <EnvironmentManager workspaceId={workspace.id} />
-
-          <WorkspaceSettings
-            workspaceId={workspace.id}
-            workspaceName={workspace.name}
-            role={workspace.role}
-          />
-
-          <Separator orientation="vertical" className="h-6 hidden sm:block" />
-
-          {/* User menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center">
-                <Avatar className="h-7 w-7">
-                  <AvatarImage src={session?.user?.image ?? undefined} />
-                  <AvatarFallback className="text-[10px] bg-muted">
-                    {(session?.user?.name ?? session?.user?.email ?? "U")[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
-
-      <div className="flex flex-1 min-h-0">
-        {/* Sidebar - hidden on mobile, narrower on tablet */}
-        <div
-          className="hidden md:flex flex-col border-r border-border bg-card shrink-0"
-          style={{ width: `${sidebarWidth}px` }}
-        >
-          {sidebarContent}
-        </div>
-
-        {/* Resize handle - hidden on mobile and tablet */}
-        <div
-          className={`hidden lg:block w-1 cursor-col-resize hover:bg-[#FF6B35]/30 transition-colors shrink-0 ${
-            resizing ? "bg-[#FF6B35]/50" : ""
-          }`}
-          onMouseDown={handleMouseDown}
-        />
-
-        {/* Main area */}
-        <div className="flex-1 flex flex-col min-w-0 min-h-0">
-          {/* Tabs - horizontally scrollable */}
-          {tabs.length > 0 && (
-            <div className="flex items-center border-b border-border bg-card shrink-0 overflow-x-auto scrollbar-none">
-              {tabs.map((tab, i) => (
-                <button
-                  key={tab.request.id}
-                  className={`group flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-2 text-xs border-r border-border shrink-0 max-w-[150px] md:max-w-[200px] ${
-                    i === activeTabIndex
-                      ? "bg-background text-foreground border-b-2 border-b-[#FF6B35]"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
-                  }`}
-                  onClick={() => setActiveTab(i)}
-                >
-                  <span className={`font-mono font-bold text-[10px] ${METHOD_COLORS[tab.request.method]}`}>
-                    {tab.request.method}
-                  </span>
-                  <span className="truncate">{tab.request.name}</span>
-                  {tab.dirty && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#FF6B35] shrink-0" />
-                  )}
-                  <button
-                    className="ml-1 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      closeTab(i);
-                    }}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+    <TooltipProvider delayDuration={300}>
+      <div className="flex h-screen flex-col bg-background overflow-hidden">
+        {/* Top bar */}
+        <header className="flex h-11 items-center justify-between border-b border-border/50 bg-surface-1 px-2 md:px-3 shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0">
+            {/* Mobile sidebar toggle */}
+            <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+              <SheetTrigger asChild>
+                <button className="md:hidden p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-3 transition-colors">
+                  <PanelLeft className="h-4 w-4" />
                 </button>
-              ))}
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[280px] p-0 flex flex-col bg-surface-1">
+                {sidebarContent}
+              </SheetContent>
+            </Sheet>
+
+            <button
+              onClick={() => router.push("/app")}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-3 transition-colors"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+
+            {/* Desktop sidebar collapse */}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden md:flex p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-3 transition-colors"
+            >
+              <PanelLeft className="h-3.5 w-3.5" />
+            </button>
+
+            <div className="h-4 w-px bg-border/50 mx-1 hidden sm:block" />
+            <span className="text-sm font-medium truncate">{workspace.name}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Environment selector */}
+            <div className="flex items-center gap-1.5">
+              <Globe className="h-3 w-3 text-muted-foreground hidden sm:block" />
+              <Select
+                value={activeEnvironment?.id ?? "none"}
+                onValueChange={(v) => handleEnvironmentChange(v === "none" ? "" : v)}
+              >
+                <SelectTrigger className="w-[110px] md:w-[140px] h-7 text-[11px] bg-surface-2 border-border/30">
+                  <SelectValue placeholder="No environment" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" className="text-xs">No environment</SelectItem>
+                  {environments.map((env) => (
+                    <SelectItem key={env.id} value={env.id} className="text-xs">
+                      {env.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="h-4 w-px bg-border/30 mx-0.5 hidden sm:block" />
+
+            <EnvironmentManager
+              workspaceId={workspace.id}
+              trigger={
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-3 transition-colors">
+                      <Settings className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">Environments</TooltipContent>
+                </Tooltip>
+              }
+            />
+
+            <WorkspaceSettings
+              workspaceId={workspace.id}
+              workspaceName={workspace.name}
+              role={workspace.role}
+            />
+
+            <div className="h-4 w-px bg-border/30 mx-0.5 hidden sm:block" />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center p-1">
+                  <Avatar className="h-6 w-6">
+                    <AvatarImage src={session?.user?.image ?? undefined} />
+                    <AvatarFallback className="text-[9px] bg-surface-3 text-muted-foreground">
+                      {(session?.user?.name ?? session?.user?.email ?? "U")[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <div className="px-3 py-1.5 text-[11px] text-muted-foreground truncate">
+                  {session?.user?.email}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/login" })}>
+                  <LogOut className="mr-2 h-3.5 w-3.5" />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        <div className="flex flex-1 min-h-0">
+          {/* Sidebar */}
+          {!sidebarCollapsed && (
+            <div
+              className="hidden md:flex flex-col border-r border-border/50 bg-surface-1 shrink-0"
+              style={{ width: `${sidebarWidth}px` }}
+            >
+              {sidebarContent}
             </div>
           )}
 
-          {/* Request editor */}
-          <div className="flex-1 min-h-0 overflow-auto">
-            <RequestEditor workspaceId={workspace.id} />
+          {/* Resize handle */}
+          {!sidebarCollapsed && (
+            <div
+              className={`hidden lg:block w-px cursor-col-resize hover:bg-volley/40 transition-colors shrink-0 ${
+                resizing ? "bg-volley/60" : "bg-border/30"
+              }`}
+              onMouseDown={handleMouseDown}
+            />
+          )}
+
+          {/* Main area */}
+          <div className="flex-1 flex flex-col min-w-0 min-h-0">
+            {/* Tabs */}
+            {tabs.length > 0 && (
+              <div className="flex items-center border-b border-border/50 bg-surface-1/50 shrink-0 overflow-x-auto scrollbar-none">
+                {tabs.map((tab, i) => (
+                  <button
+                    key={tab.request.id}
+                    className={`group flex items-center gap-1.5 px-3 py-2 text-[11px] border-r border-border/30 shrink-0 max-w-[180px] transition-colors ${
+                      i === activeTabIndex
+                        ? "bg-background text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-surface-2/50"
+                    }`}
+                    onClick={() => setActiveTab(i)}
+                  >
+                    {i === activeTabIndex && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-volley" />
+                    )}
+                    <span className={`font-mono font-bold text-[9px] px-1 rounded ${METHOD_COLORS[tab.request.method]}`}>
+                      {tab.request.method.substring(0, 3)}
+                    </span>
+                    <span className="truncate">{tab.request.name}</span>
+                    {tab.dirty && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-volley shrink-0" />
+                    )}
+                    <button
+                      className="ml-auto p-0.5 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeTab(i);
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Request editor */}
+            <div className="flex-1 min-h-0 overflow-auto">
+              <RequestEditor workspaceId={workspace.id} />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
